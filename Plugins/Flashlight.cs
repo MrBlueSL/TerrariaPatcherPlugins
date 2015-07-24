@@ -33,7 +33,7 @@ namespace MrBlueSLPlugins
 
         public void OnPlayerUpdate(Player player)
         {
-            if (flashlight)
+            if (flashlight) 
             {
                 Lighting.AddLight((int)((double)(Main.mouseState.X + Main.screenPosition.X) + (double)(Player.defaultWidth / 2)) / 16, (int)((double)(Main.mouseState.Y + Main.screenPosition.Y) + (double)(Player.defaultHeight / 2)) / 16, 1f, 1f, 1f);
             }
