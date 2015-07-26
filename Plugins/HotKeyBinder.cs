@@ -18,7 +18,7 @@ namespace MrBlueSLPlugins
             if (args.Length < 1 || args.Length > 4 || args[0] == "help")
             {
                 Main.NewText("Usage:");
-                Main.NewText("  /bind modifier hotkey");
+                Main.NewText("  /bind modifier hotkey function");
                 Main.NewText("Example:");
                 Main.NewText("  /bind Control T /time dusk");
                 return true;
