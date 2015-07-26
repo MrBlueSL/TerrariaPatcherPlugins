@@ -2,62 +2,66 @@ using System;
 using System.Linq;
 using PluginLoader;
 using Terraria;
-using Keys = Microsoft.Xna.Framework.Input.Keys;
 
 namespace MrBlueSLPlugins
 {
-    public class HotKeyBinder : MarshalByRefObject, IPluginChatCommand
+    public class Bind : MarshalByRefObject, IPluginChatCommand
     {
         public bool OnChatCommand(string command, string[] args)
         {
-            if (command != "bind") return false;
-
-            if (args.Length < 2 || (args.Length > 0 && args[0] == "help"))
+            if (command != "bind" && command != "unbind" && command != "listbinds") return false;
+            
+            if ((command == "bind" && (args.Length <= 1 || args[0] == "help")) ||
+                (command == "unbind" && (args.Length <= 0 || args[0] == "help")) ||
+                (command == "listbinds" && args.Length > 0 && args[0] == "help"))
             {
                 Main.NewText("Usage:");
                 Main.NewText("  /bind modifier,hotkey command");
+                Main.NewText("  /unbind modifier,hotkey");
+                Main.NewText("  /listbinds");
                 Main.NewText("Example:");
                 Main.NewText("  /bind Control,T /time dusk");
+                Main.NewText("  /unbind Control,T");
                 return true;
             }
-
-            BindHotkey(args[0], string.Join(" ", args.Skip(1)));
+            
+            if (command == "bind")
+                BindHotkey(args[0], string.Join(" ", args.Skip(1)));
+            else if (command == "unbind")
+                UnbindHotkey(args[0]);
+            else if (command == "listbinds")
+            {
+                foreach (var hotkey in Loader.GetHotkeys().Where(hotkey => !string.IsNullOrEmpty(hotkey.Tag)))
+                    Main.NewText(hotkey.ToString());
+            }
             return true;
         }
 
         private void BindHotkey(string hotkey, string cmd)
         {
-            var key = Keys.None;
-            var control = false;
-            var shift = false;
-            var alt = false;
-            bool hotkeyParseFailed = false;
-            foreach (var keyStr in hotkey.Split(','))
-            {
-                switch (keyStr.ToLower())
-                {
-                    case "control":
-                        control = true;
-                        break;
-                    case "shift":
-                        shift = true;
-                        break;
-                    case "alt":
-                        alt = true;
-                        break;
-                    default:
-                        if (key != Keys.None || !Keys.TryParse(keyStr, out key)) hotkeyParseFailed = true;
-                        break;
-                }
-            }
+            var key = Loader.ParseHotkey(hotkey);
 
-            if (string.IsNullOrEmpty(cmd) || !cmd.StartsWith("/") || hotkeyParseFailed || key == Keys.None)
+            if (string.IsNullOrEmpty(cmd) || !cmd.StartsWith("/") || key == null)
                 Main.NewText("Invalid hotkey binding");
             else
             {
                 IniAPI.WriteIni("HotkeyBinds", hotkey, cmd);
-                Loader.RegisterHotkey(cmd, key, control, shift, alt);
+                Loader.RegisterHotkey(cmd, key);
                 Main.NewText(hotkey + " set to " + cmd);
+            }
+        }
+
+        private void UnbindHotkey(string hotkey)
+        {
+            var key = Loader.ParseHotkey(hotkey);
+
+            if (key == null)
+                Main.NewText("Invalid hotkey binding");
+            else
+            {
+                IniAPI.WriteIni("HotkeyBinds", hotkey, null);
+                Loader.UnregisterHotkey(key);
+                Main.NewText("Unbound " + hotkey);
             }
         }
     }
