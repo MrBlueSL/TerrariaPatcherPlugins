@@ -5,7 +5,7 @@ using Terraria;
 
 namespace MrBlueSLPlugins
 {
-    public class Bind : MarshalByRefObject, IPluginChatCommand
+    public class HotKeyBinder : MarshalByRefObject, IPluginChatCommand
     {
         public bool OnChatCommand(string command, string[] args)
         {
