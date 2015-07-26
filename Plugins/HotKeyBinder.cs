@@ -1,65 +1,64 @@
 using System;
-using Microsoft.Xna.Framework.Input;
+using System.Linq;
 using PluginLoader;
 using Terraria;
+using Keys = Microsoft.Xna.Framework.Input.Keys;
 
 namespace MrBlueSLPlugins
 {
     public class HotKeyBinder : MarshalByRefObject, IPluginChatCommand
     {
         public bool OnChatCommand(string command, string[] args)
-        {        
-            string a0 = args[0];
-            string a1 = args[1];
-            string a2 = args[2];
-            string a3 = args[3];
+        {
             if (command != "bind") return false;
 
-            if (args.Length < 1 || args.Length > 4 || args[0] == "help")
+            if (args.Length < 2 || (args.Length > 0 && args[0] == "help"))
             {
                 Main.NewText("Usage:");
-                Main.NewText("  /bind modifier hotkey function");
+                Main.NewText("  /bind modifier,hotkey command");
                 Main.NewText("Example:");
-                Main.NewText("  /bind Control T /time dusk");
+                Main.NewText("  /bind Control,T /time dusk");
                 return true;
             }
-            if (args[0] == a0 && args[1] == a1 && args[2] == a2 && args[3] == a3)
-            {
-                IniAPI.WriteIni("HotkeyBinds", a0 + "," + a1, a2 + " " + a3);
-                if (args[0] == "Control" || args[0] == "control")
-                {
-                    a0 = "Ctrl";
-                }
-                else if (args[0] == "alt")
-                {
-                    a0 = "Alt";
-                }
-                else if (args[0] == "shift")
-                {
-                    a0 = "Shift";
-                }
-                Main.NewText(a0 + "+" + a1 + " set to " + a2 + " " + a3 + " (Restart required)");
-                return true;
-            }
-            else if (args[0] == a0 && args[1] == a1 && args[2] == a2)
-            {
-                IniAPI.WriteIni("HotkeyBinds", a0 + "," + a1, a2);
-                if (args[0] == "Control" || args[0] == "control")
-                {
-                    a0 = "Ctrl";
-                }
-                else if (args[0] == "alt")
-                {
-                    a0 = "Alt";
-                }
-                else if (args[0] == "shift")
-                {
-                    a0 = "Shift";
-                }
-                Main.NewText(a0 + "+" + a1 + " set to " + a2 + " (Restart required)");
-                return true;
-            }
+
+            BindHotkey(args[0], string.Join(" ", args.Skip(1)));
             return true;
         }
+
+        private void BindHotkey(string hotkey, string cmd)
+        {
+            var key = Keys.None;
+            var control = false;
+            var shift = false;
+            var alt = false;
+            bool hotkeyParseFailed = false;
+            foreach (var keyStr in hotkey.Split(','))
+            {
+                switch (keyStr.ToLower())
+                {
+                    case "control":
+                        control = true;
+                        break;
+                    case "shift":
+                        shift = true;
+                        break;
+                    case "alt":
+                        alt = true;
+                        break;
+                    default:
+                        if (key != Keys.None || !Keys.TryParse(keyStr, out key)) hotkeyParseFailed = true;
+                        break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(cmd) || !cmd.StartsWith("/") || hotkeyParseFailed || key == Keys.None)
+                Main.NewText("Invalid hotkey binding");
+            else
+            {
+                IniAPI.WriteIni("HotkeyBinds", hotkey, cmd);
+                Loader.RegisterHotkey(cmd, key, control, shift, alt);
+                Main.NewText(hotkey + " set to " + cmd);
+            }
+        }
     }
-} 
+}
